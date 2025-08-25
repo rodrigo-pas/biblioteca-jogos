@@ -7,7 +7,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/jogos")
@@ -19,50 +18,43 @@ public class JogoController {
         this.repository = repository;
     }
 
-    // GET /jogos – Lista todos os jogos
     @GetMapping
     public List<Jogo> listarTodos() {
         return repository.findAll();
     }
 
-    // GET /jogos/{id} – Busca jogo por ID
     @GetMapping("/{id}")
     public ResponseEntity<Jogo> buscarPorId(@PathVariable Long id) {
-        Optional<Jogo> jogo = repository.findById(id);
-        return jogo.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        return repository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
-    // POST /jogos – Cadastra novo jogo
     @PostMapping
     public ResponseEntity<Jogo> cadastrar(@Valid @RequestBody Jogo jogo) {
-        Jogo salvo = repository.save(jogo);
-        return ResponseEntity.status(201).body(salvo);
+        return ResponseEntity.status(201).body(repository.save(jogo));
     }
 
-    // PUT /jogos/{id} – Atualiza um jogo
     @PutMapping("/{id}")
-    public ResponseEntity<Jogo> atualizar(@PathVariable Long id, @Valid @RequestBody Jogo novoJogo) {
+    public ResponseEntity<Jogo> atualizar(@PathVariable Long id, @Valid @RequestBody Jogo dadosAtualizados) {
         return repository.findById(id)
                 .map(jogo -> {
-                    jogo.setNome(novoJogo.getNome());
-                    jogo.setPlataforma(novoJogo.getPlataforma());
-                    jogo.setFinalizado(novoJogo.isFinalizado());
-                    jogo.setNota(novoJogo.getNota());
-                    jogo.setDataCompra(novoJogo.getDataCompra());
+                    jogo.setNome(dadosAtualizados.getNome());
+                    jogo.setPlataforma(dadosAtualizados.getPlataforma());
+                    jogo.setFinalizado(dadosAtualizados.isFinalizado());
+                    jogo.setNota(dadosAtualizados.getNota());
+                    jogo.setDataCompra(dadosAtualizados.getDataCompra());
                     return ResponseEntity.ok(repository.save(jogo));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // DELETE /jogos/{id} – Remove um jogo
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
-        if (repository.existsById(id)) {
-            repository.deleteById(id);
-            return ResponseEntity.noContent().build();
-        } else {
+        if (!repository.existsById(id)) {
             return ResponseEntity.notFound().build();
         }
+        repository.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }
